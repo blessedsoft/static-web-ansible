@@ -1,0 +1,38 @@
+---
+- name: Install and configure web server
+  hosts: web
+  become: yes
+  tasks:
+    - name: Install Apache2
+      apt:
+        name: apache2
+        state: present
+        update_cache: yes
+
+    - name: Ensure Apache2 is running
+      systemd:
+        name: apache2
+        state: started
+        enabled: yes
+
+- name: Deploy static website content
+  hosts: web
+  become: yes
+  tasks:
+    - name: Copy index.html to web root
+      copy:
+        src: files/index.html
+        dest: /var/www/html/index.html
+        mode: '0644'
+
+- name: Verify deployment
+  hosts: web
+  tasks:
+    - name: Check HTTP response
+      uri:
+        url: "http://{{ inventory_hostname }}"
+        return_content: yes
+      register: result
+
+    - debug:
+        msg: "Website is reachable: {{ result.status }}"
